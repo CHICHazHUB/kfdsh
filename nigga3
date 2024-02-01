@@ -48,9 +48,7 @@ task.spawn(function()
                 enterFish = game:GetService("Workspace").__THINGS.Instances.AdvancedFishing.Teleports.Enter.CFrame
                 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = enterFish
                 task.wait(5)
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1451.46741, 66.0671844,
-                    -4447.83643, 0.265185595, 3.25603811e-09, -0.964197397, -9.78775319e-08, 1, -2.35425581e-08,
-                    0.964197397, 1.00616404e-07, 0.265185595)
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(teleport + Vector3.new(1337.605, 63.042, -4443.654))
                 task.wait(5)
                 game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1451.46741, 66.0671844,
                     -4447.83643, 0.265185595, 3.25603811e-09, -0.964197397, -9.78775319e-08, 1, -2.35425581e-08,
