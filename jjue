@@ -15,8 +15,8 @@ getgenv().config = {
     autoMailTimer = 300,              -- custom timer (seconds)
 
     manualMailUsers = {
-        "Username1",                 -- Usernames to manual mail
-        "Username2",                 -- can add as many as you want
+        "DarKuSXzzzz",                 -- Usernames to manual mail
+        "",                 -- can add as many as you want
     },
     manualMailItem = "",             -- "Magic Shards" // "Huge Poseidon Corgi"
     manualMailAmount = 0,              -- amount to manually mail
