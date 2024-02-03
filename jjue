@@ -21,14 +21,14 @@ getgenv().config = {
     manualMailItem = "",             -- "Magic Shards" // "Huge Poseidon Corgi"
     manualMailAmount = 0,              -- amount to manually mail
 }
-loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/For-work/main/hhh?token=GHSAT0AAAAAACMG2WO5UFP5NPTYY45FS3PAZN57WUA"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/For-work/main/hhh?token=GHSAT0AAAAAACMG2WO5DWXV63RCPBF3V7POZN6CB6A"))()
 end)
 task.spawn(function()
-    task.wait(10)
-    loadstring(game:HttpGet("https://github.com/CHICHazHUB/For-work/blob/main/hgh"))()
+    task.wait(5)
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/For-work/main/hgh?token=GHSAT0AAAAAACMG2WO5TTJ22GDJZTIIKUJKZN6B73Q"))()
 end)
 
 task.spawn(function()
-    task.wait(40)
+    task.wait(30)
     loadstring(game:HttpGet("https://raw.githubusercontent.com/darzex/script/main/low-cpu.lua"))()
 end)
