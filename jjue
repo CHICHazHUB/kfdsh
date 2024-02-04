@@ -27,8 +27,3 @@ task.spawn(function()
     task.wait(5)
     loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/kfdsh/main/ddd"))()
 end)
-
-task.spawn(function()
-    task.wait(30)
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/darzex/script/main/low-cpu.lua"))()
-end)
