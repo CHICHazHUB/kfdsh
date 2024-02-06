@@ -5,14 +5,14 @@ getgenv().config = {
     invisWater = true,                  -- make water transparent
     autoPresents = true,              -- auto collect presents
 
-    autoMail = true,                  -- true // false
+    autoMail = false,                  -- true // false
     autoMailUsers = {                 
         "DarKuSXzzzz",                 -- Usernames to auto mail
        	 "",                 -- can add as many as you want
     },
-    autoMailItem = "Huge Poseidon Corgi",                 -- "Magic Shards" // "Huge Poseidon Corgi"
+    autoMailItem = "Magic Shards",                 -- "Magic Shards" // "Huge Poseidon Corgi"
     autoMailAmount = 0,              -- amount to auto mail (for shards)
-    autoMailTimer = 300,              -- custom timer (seconds)
+    autoMailTimer = 150,              -- custom timer (seconds)
 
     manualMailUsers = {
         "DarKuSXzzzz",                 -- Usernames to manual mail
