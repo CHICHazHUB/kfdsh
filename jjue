@@ -1,27 +1,32 @@
 task.spawn(function()
-getgenv().config = {                 
-    autoFishing = true,              -- farm off execution or not
-    placetoFish = "AdvancedFishing", -- "Fishing" // "AdvancedFishing"
-    invisWater = true,                  -- make water transparent
-    autoPresents = true,              -- auto collect presents
-
-    autoMail = false,                  -- true // false
+getgenv().config = {
+    placetoFish = "AdvancedFishing", -- place to fish "Fishing" or "AdvancedFishing"
+    autoFishing = true, -- fish off execution or not
+    autoPresents = true, -- collect presents
+    updateStats = true, -- update personal stats
+    invisWater = true, --invisible water :-)
+    renderer = false,
+    autoDaycare = false,
+    autoMerchants = false,
+    autoVendings = false,
+    
+    autoMail = true,                  -- true // false
     autoMailUsers = {                 
         "DarKuSXzzzz",                 -- Usernames to auto mail
        	 "",                 -- can add as many as you want
     },
     autoMailItem = "Magic Shards",                 -- "Magic Shards" // "Huge Poseidon Corgi"
-    autoMailAmount = 0,              -- amount to auto mail (for shards)
+    autoMailAmount = 100,              -- amount to auto mail (for shards)
     autoMailTimer = 150,              -- custom timer (seconds)
 
     manualMailUsers = {
         "DarKuSXzzzz",                 -- Usernames to manual mail
         "",                 -- can add as many as you want
     },
-    manualMailItem = "",             -- "Magic Shards" // "Huge Poseidon Corgi"
+    manualMailItem = "1",             -- "Magic Shards" // "Huge Poseidon Corgi"
     manualMailAmount = 0,              -- amount to manually mail
 }
-loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/kfdsh/main/nn"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/CHICHazHUB/Semaguteb/main/aaa"))()
 end)
 task.spawn(function()
     task.wait(5)
