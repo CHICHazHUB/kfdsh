@@ -1,0 +1,387 @@
+local osclock = os.clock()
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+local itemPrices = {}
+game.Players.LocalPlayer.PlayerScripts.Scripts.Core["Idle Tracking"].Enabled = false
+game:GetService("RunService"):Set3dRenderingEnabled(false)
+local Booths_Broadcast = game:GetService("ReplicatedStorage").Network:WaitForChild("Booths_Broadcast")
+local Players = game:GetService('Players')
+local getPlayers = Players:GetPlayers()
+local PlayerInServer = #getPlayers
+local http = game:GetService("HttpService")
+local ts = game:GetService("TeleportService")
+local rs = game:GetService("ReplicatedStorage")
+local Library = require(rs:WaitForChild("Library"))
+
+local vu = game:GetService("VirtualUser")
+Players.LocalPlayer.Idled:connect(function()
+   vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+   task.wait(1)
+   vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
+
+local function processListingInfo(uid, gems, item, version, shiny, amount, boughtFrom, boughtStatus, class, failMessage)
+    local gemamount = Players.LocalPlayer.leaderstats["💎 Diamonds"].Value
+    local snipeMessage =""
+    local weburl, webContent, webcolor
+    local versionVal = { [1] = "Golden ", [2] = "Rainbow " }
+    local versionStr = versionVal[version] or (version == nil and "")
+    local mention = (string.find(item, "Huge") or string.find(item, "Titanic")) and "<@" .. DiscordID .. ">" or ""
+	
+    if boughtStatus then
+        webcolor = tonumber(0x00ff00)
+        snipeMessage = snipeMessage .. " Just sniped ".. amount .."x "
+        webContent = mention
+        weburl = WebhookSuccess
+    else
+        webcolor = tonumber(0xff0000)
+        weburl = WebhookFail
+        snipeMessage = snipeMessage .. " Failed to snipe ".. amount .."x "
+    end
+
+    if not failMessage then
+        failMessage = "Success!"
+    end
+    
+    snipeMessage = snipeMessage .. "**" .. versionStr
+    
+    if shiny then
+        snipeMessage = snipeMessage .. " Shiny "
+    end
+    
+    snipeMessage = snipeMessage .. item .. "**"
+    
+    local message1 = {
+        content = mention,
+        embeds = {
+            {
+                author = {
+                    name = "🌟 Reimu's Epic Purchase 🌟",
+                },
+                title = snipeMessage,
+                color = webcolor,
+                fields = {
+                    
+                    {
+                        name = "💰 TOTAL PRICE:",
+                        value = string.format("%s", tostring(gems * amount):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""))
+                    },
+                    {
+                        name = "🤑 PRICE PER:",
+                        value = string.format("%s", tostring(gems):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""))
+                    },
+                    {
+                        name = "📦 AMOUNT:",
+                        value = Library.Functions.commas(amount) .. "x",
+                    },
+                    {
+                        name = "🤡 BOUGHT FROM:",
+                        value = "||" .. tostring(boughtFrom) .. "||",
+                    },
+                    {
+                        name = "👤 USER:",
+                        value = "||" .. game.Players.LocalPlayer.Name .. "||",
+                    },
+                    {
+                        name = "💎 GEM'S LEFT:",
+                        value = string.format("%s", tostring(gemamount):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", ""))
+                    },
+                    {
+                        name = "⌛ STATUS:",
+                        value = failMessage,
+                    },
+                    {
+                        name = "🚀 PING:",
+                        value = tostring(math.round(game.Players.LocalPlayer:GetNetworkPing() * 1000)) .. "ms",
+                    },
+                },
+                footer = {
+                    text = "Touhou Sniper | gg/AnDdfX3DX3"
+                }
+            }
+        }
+    }
+
+    local jsonMessage = http:JSONEncode(message1)
+    local success, webMessage = pcall(function()
+	http:PostAsync(weburl, jsonMessage)
+    end)
+    if success == false then
+        local response = request({
+            Url = weburl,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = jsonMessage
+        })
+    end
+end
+
+local function tryPurchase(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+    if buytimestamp > listTimestamp then
+        local timeToWait = buytimestamp - workspace:GetServerTimeNow() + game.Players.LocalPlayer:GetNetworkPing() / 2
+        task.wait(timeToWait)
+    end
+    local boughtPet, boughtMessage = game:GetService("ReplicatedStorage").Network.Booths_RequestPurchase:InvokeServer(playerid, { [uid] = amount })
+    processListingInfo(uid, gems, item, version, shiny, amount, username, boughtPet, class, boughtMessage)
+end
+
+Booths_Broadcast.OnClientEvent:Connect(function(username, message)
+    if type(message) == "table" then
+        local highestTimestamp = -math.huge
+        local key = nil
+        local listing = nil
+
+        for v, value in pairs(message["Listings"] or {}) do
+            if type(value) == "table" and value["ItemData"] and value["ItemData"]["data"] then
+                local timestamp = value["Timestamp"]
+                if timestamp > highestTimestamp then
+                    highestTimestamp = timestamp
+                    key = v
+                    listing = value
+                end
+            end
+        end
+
+        if listing then
+            local buytimestamp = listing["ReadyTimestamp"]
+            local listTimestamp = listing["Timestamp"]
+            local data = listing["ItemData"]["data"]
+            local gems = tonumber(listing["DiamondCost"])
+            local uid = key
+            local item = data["id"]
+            local version = data["pt"]
+            local shiny = data["sh"]
+            local amount = tonumber(data["_am"]) or 1
+            local playerid = message['PlayerID']
+            local class = tostring(listing["ItemData"]["class"])
+
+            -- Pets
+            if string.find(item, "Huge") and gems <= 1 then
+                coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                return
+            elseif class == "Pet" then
+                local petType = Library.Directory.Pets[item]
+                if petType.exclusiveLevel and gems <= 1 and item ~= "Banana" and item ~= "Coin" then
+                    coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                    return
+                elseif petType.titanic and gems <= 1 then
+                    coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                    return
+                elseif petType.huge and gems <= 1 then
+                    coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                    return
+                end
+                elseif class == "Egg" and gems <= 1 then
+                    coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                    return
+                end
+                local Price = function(item, maxGems)
+                    if gems <= maxGems then
+                        coroutine.wrap(tryPurchase)(uid, gems, item, version, shiny, amount, username, class, playerid, buytimestamp, listTimestamp)
+                        return true
+                    end
+                    return false
+                end
+                if class == "Misc" then
+                    itemPrices = {
+                        ["Arcade Token"] = 1,
+                        ["Booth Slot Voucher"] = 1,
+                        ["Charm Chisel"] = 1,
+                        ["Charm Stone"] = 1,
+                        ["Clan Voucher"] = 1,
+                        ["Crystal Key"] = 1,
+                        ["Crystal Key Lower Half"] = 1,
+                        ["Crystal Key Upper Half"] = 1,
+                        ["Daycare Slot Voucher"] = 1,
+                        ["Exclusive Daycare Slot Voucher"] = 1,
+                        ["Exotic Treasure Flag"] = 1,
+                        ["Insta Plant Capsule"] = 1,
+                        ["Large Gift Bag"] = 1,
+                        ["Magic Shard"] = 1,
+                        ["Mini Chest"] = 1,
+                        ["Mini Pinata"] = 1,
+                        ["Mystery Ticket"] = 1,
+                        ["Rainbow Mini Chest"] = 1,
+                        ["Secret Key"] = 49000,
+                        ["Secret Key Lower Half"] = 767,
+                        ["Secret Key Upper Half"] = 4000,
+                        ["Spinny Wheel Ticket"] = 1,
+                        ["Tech Key"] = 1,
+                        ["Tech Key Lower Half"] = 1,
+                        ["Tech Key Upper Half"] = 1,
+                        ["Tech Spinny Wheel Ticket"] = 1,
+                        ["Treasure Hideout Key"] = 1,
+                        ["Treasure Hideout Key Lower Half"] = 1,
+                        ["Treasure Hideout Key Upper Half"] = 1,
+                    }
+                elseif class == "Enchants" then
+                        itemPrices = {
+                        ["Chest Mimic"] = 1,         -- 1b
+                        ["Super Shiny Hunter"] = 1,   -- 350m
+                        ["Boss Chest Mimic"] = 1,     -- 200m
+                        ["Boss Lucky Block"] = 1,     -- 200m
+                        ["Diamond Chest Mimic"] = 1,  -- 100m
+                        ["Super Magnet"] = 1,         -- 100m
+                        ["Massive Comet"] = 1,         -- 50m
+                        ["Lucky Block"] = 1,           -- 30m
+                        ["Lightning Orb"] = 1,         -- 15m
+                        ["Party Time"] = 1,            -- 10m
+                        ["Huge Hunter"] = 1,            -- 7m
+                        ["Shiny Hunter"] = 1,            -- 500k
+                        ["Starfall"] = 1,                -- 450k                
+                    }
+                elseif class == "Potion" then
+                    itemPrices = {
+                        ["The Cocktail"] = 1,          -- 100k
+                    }
+                elseif class == "Seed" then
+                    itemPrices = {
+                        ["Diamond"] = 1,                -- 15k
+                    }
+                elseif class == "Lootbox" then
+                    itemPrices = {
+                        ["Hype Egg"] = 1,             -- 3.5m
+                        ["Arcade Egg 5"] = 1,         -- 1m
+                    }
+                elseif class == "Ultimates" then
+                    itemPrices = {
+                        ["Hidden Treasure"] = 1,   -- 1b
+                        ["Black Hole"] = 1,         -- 200m
+                        ["Chest Spell"] = 1,        -- 200m
+                        ["Tsunami"] = 1,             -- 15m
+                        ["Tornado"] = 1,              -- 5m
+                        ["Lightning Storm"] = 1,      -- 1m
+                        ["TNT Shower"] = 1,            -- 450k
+                    }
+                elseif class == "Hoverboard" then
+                    itemPrices = {
+                        ["Present"] = 1,            -- 450m
+                        ["Cosmic"] = 1,             -- 400m
+                        ["Ducky"] = 1,              -- 300m
+                        ["Pegasus"] = 1,            -- 300m
+                        ["Bleebo The Alien"] = 1,   -- 200m
+                        ["Blobfish"] = 1,           -- 200m
+                        ["Fire Dragon"] = 1,         -- 50m
+                        ["Helicopter"] = 1,          -- 50m
+                        ["Oversized"] = 1,           -- 40m
+                        ["Rocket"] = 1,              -- 30m
+                        ["UFO"] = 1,                 -- 30m
+                        ["Balloon"] = 1,             -- 15m
+                    ["Nightmare"] = 1,           -- 15m
+                    ["Hologram"] = 1,            -- 15m 
+                    ["Sleigh"] = 1,              -- 10m
+                    ["Noob"] = 1,                -- 10m
+                    ["Toilet"] = 1,              -- 10m
+                    ["M10"] = 1,                  -- 7m
+                    ["High-Tech"] = 1,            -- 6m
+                    ["Banana"] = 1,               -- 5m
+                    ["Doodle"] = 1,               -- 5m
+                    ["Steampunk"] = 1,            -- 5m
+                    ["Hotdog"] = 1,               -- 3.5m  
+                }
+            elseif class == "Booth" then
+                itemPrices = {
+                    ["Present"] = 1,             -- 40m
+                    ["Galaxy"] = 1,              -- 30m
+                    ["Cupcake"] = 1,             -- 25m
+                    ["Throne"] = 1,              -- 25m
+                    ["Alien"] = 1,               -- 20m
+                    ["Empyrean"] = 1,            -- 20m
+                    ["M10"] = 1,                 -- 20m
+                    ["Glitched"] = 1,            -- 10m
+                    ["Comet"] = 1,                -- 7m
+                    ["Neon Twilight"] = 1,        -- 7m
+                    ["Money"] = 1,                -- 4m
+                }
+            elseif class == "Charm" then
+                itemPrices = {
+                    ["Overload"] = 0,             -- 6m
+                    ["Royalty"] = 0,              -- 6m
+                }
+            end
+            if itemPrices[item] and Price(item, itemPrices[item]) then
+                return
+            end
+        end
+    end
+end)
+
+local function ServerHop()
+    local sfUrl = "https://games.roblox.com/v1/games/%s/servers/Public?sortOrder=%s&limit=%s&excludeFullGames=true"
+    local req = request({ Url = string.format(sfUrl, 15502339080, "Asc", 50) })
+    local body = http:JSONDecode(req.Body)
+    local deep = math.random(1, 3)
+    if deep > 1 then
+        for i = 1, deep, 1 do
+            req = request({ Url = string.format(sfUrl .. "&cursor=" .. body.nextPageCursor, 15502339080, "Asc", 50) })
+            body = http:JSONDecode(req.Body)
+            task.wait(0.1)
+        end
+    end
+    local servers = {}
+    if body and body.data then
+        for i, v in ipairs(body.data) do
+            if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.playing < v.maxPlayers and v.id ~= game.JobId then
+                table.insert(servers, v.id)
+            end
+        end
+    end
+    local randomCount = #servers
+    if randomCount == 0 then
+        randomCount = 2
+    end
+    ts:TeleportToPlaceInstance(15502339080, servers[math.random(1, randomCount)], game:GetService("Players").LocalPlayer)
+end
+
+while true do
+    if PlayerInServer < 30 then
+        while task.wait(10) do
+            ServerHop()
+        end
+    end
+
+    for i = 1, PlayerInServer do
+        for ii = 1, #Alts do
+            if getPlayers[i].Name == Alts[ii] and Alts[ii] ~= Players.LocalPlayer.Name then
+                while task.wait(10) do
+                    ServerHop()
+                end
+            end
+        end
+    end
+end
+
+Players.PlayerRemoving:Connect(function(player)
+    getPlayers = Players:GetPlayers()
+    PlayerInServer = #getPlayers
+    if PlayerInServer < 20 then
+        while task.wait(10) do
+            ServerHop()
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    for i = 1, #Alts do
+        if player.Name == Alts[i] and Alts[i] ~= Players.LocalPlayer.Name then
+            task.wait(math.random(0, 60))
+            while task.wait(10) do
+                ServerHop()
+            end
+        end
+    end
+end)
+
+local hopDelay = math.random(1500, 1800)
+
+while task.wait(1) do
+    if math.floor(os.clock() - osclock) >= hopDelay then
+        while task.wait(10) do
+            ServerHop()
+        end
+    end
+end
